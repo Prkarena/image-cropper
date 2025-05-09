@@ -13,7 +13,7 @@ export const createImage = (url) =>
 /**
  * Get the cropped image as a Blob
  */
-export async function getCroppedImg(imageSrc, pixelCrop, shape = 'rectangle', customSize = null, format = 'jpeg') {
+export async function getCroppedImg(imageSrc, pixelCrop, shape = 'rectangle', customSize = null, format = 'jpeg', skewMultiplier = 0.15) {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -54,7 +54,7 @@ export async function getCroppedImg(imageSrc, pixelCrop, shape = 'rectangle', cu
       // Create a new approach for parallelogram that doesn't use transformations
       const width = canvas.width;
       const height = canvas.height;
-      const skewAmount = width * 0.15;
+      const skewAmount = width * skewMultiplier; // Use the configurable skew amount
       
       // Create clipping path
       ctx.beginPath();
@@ -159,7 +159,7 @@ export async function getCroppedImg(imageSrc, pixelCrop, shape = 'rectangle', cu
 /**
  * Get the cropped image as a data URL
  */
-export async function getCroppedImgDataUrl(imageSrc, pixelCrop, shape = 'rectangle', customSize = null, format = 'jpeg') {
+export async function getCroppedImgDataUrl(imageSrc, pixelCrop, shape = 'rectangle', customSize = null, format = 'jpeg', skewMultiplier = 0.15) {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -200,7 +200,7 @@ export async function getCroppedImgDataUrl(imageSrc, pixelCrop, shape = 'rectang
       // Create a new approach for parallelogram that doesn't use transformations
       const width = canvas.width;
       const height = canvas.height;
-      const skewAmount = width * 0.15;
+      const skewAmount = width * skewMultiplier; // Use the configurable skew amount
       
       // Create clipping path
       ctx.beginPath();
@@ -315,9 +315,9 @@ export function getOutputSize(customSize = null, shape = 'rectangle') {
     'oval-small': { width: 300, height: 450 },
     'oval-medium': { width: 350, height: 525 },
     'oval-large': { width: 400, height: 600 },
-    'parallelogram-small': { width: 375, height: 600 },
-    'parallelogram-medium': { width: 665, height: 931 }, 
-    'parallelogram-large': { width: 700, height: 931 },
+    'parallelogram-small': { width: 256, height: 525 },
+    'parallelogram-medium': { width: 375, height: 600 }, 
+    'parallelogram-large': { width: 665, height: 931 },
     'portrait-small': { width: 320, height: 480 },
     'portrait-medium': { width: 375, height: 650 },
     'portrait-large': { width: 420, height: 720 },

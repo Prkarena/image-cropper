@@ -16,7 +16,7 @@ const Index = () => {
           <ImageCropper />
         </main>
         <footer className="mt-16 text-center text-sm text-gray-500">
-          <p>© 2025 Prakash Karena • All rights reserved</p>
+          <p>© 2025 Image Cropper • Designed and developed by Prakash Karena</p>
         </footer>
       </div>
     </div>

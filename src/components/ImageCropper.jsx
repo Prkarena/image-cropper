@@ -18,6 +18,7 @@ const ImageCropper = () => {
   const [shape, setShape] = useState('parallelogram');
   const [selectedSize, setSelectedSize] = useState('parallelogram-small'); // Default to medium
   const [originalFilename, setOriginalFilename] = useState("image"); // Store original filename
+  const [skewAmount, setSkewAmount] = useState(10); // New state for skew amount (default 10%)
   const fileInputRef = useRef(null);
 
   const onFileChange = (e) => {
@@ -63,22 +64,20 @@ const ImageCropper = () => {
     }
   }, []);
 
-  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+  const onCropComplete = useCallback(async (croppedArea, croppedAreaPixels) => {
     setCroppedAreaPixels(croppedAreaPixels);
-  }, []);
-
-  const showCroppedImage = useCallback(async () => {
+    // Generate preview immediately when crop is complete
     try {
-      const dataUrl = await getCroppedImgDataUrl(imageSrc, croppedAreaPixels, shape, selectedSize);
+      const dataUrl = await getCroppedImgDataUrl(imageSrc, croppedAreaPixels, shape, selectedSize, undefined, skewAmount / 100);
       setCroppedImage(dataUrl);
     } catch (e) {
       console.error(e);
     }
-  }, [imageSrc, croppedAreaPixels, shape, selectedSize]);
+  }, [imageSrc, shape, selectedSize, skewAmount]);
 
   const downloadCroppedImage = useCallback(async () => {
     try {
-      const blob = await getCroppedImg(imageSrc, croppedAreaPixels, shape, selectedSize);
+      const blob = await getCroppedImg(imageSrc, croppedAreaPixels, shape, selectedSize, undefined, skewAmount / 100);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -94,11 +93,11 @@ const ImageCropper = () => {
     } catch (e) {
       console.error(e);
     }
-  }, [imageSrc, croppedAreaPixels, shape, selectedSize, originalFilename]);
+  }, [imageSrc, croppedAreaPixels, shape, selectedSize, originalFilename, skewAmount]);
 
   const downloadCroppedImageWebP = useCallback(async () => {
     try {
-      const blob = await getCroppedImg(imageSrc, croppedAreaPixels, shape, selectedSize, 'webp');
+      const blob = await getCroppedImg(imageSrc, croppedAreaPixels, shape, selectedSize, 'webp', skewAmount / 100);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -110,7 +109,7 @@ const ImageCropper = () => {
     } catch (e) {
       console.error(e);
     }
-  }, [imageSrc, croppedAreaPixels, shape, selectedSize, originalFilename]);
+  }, [imageSrc, croppedAreaPixels, shape, selectedSize, originalFilename, skewAmount]);
 
   const handleReset = () => {
     setImageSrc(null);
@@ -298,115 +297,119 @@ const ImageCropper = () => {
                   </SelectContent>
                 </Select>
                 
+                {shape === 'parallelogram' && (
+                  <div className="mt-6">
+                    <Label className="mb-3 block text-base">Parallelogram Skew</Label>
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <Slider
+                          value={[skewAmount]}
+                          min={5}
+                          max={45}
+                          step={1}
+                          onValueChange={(value) => {
+                            setSkewAmount(value[0]);
+                            setCroppedImage(null);
+                          }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700 min-w-[3rem]">{skewAmount}%</span>
+                    </div>
+                    <p className="mt-2 text-sm text-gray-500">
+                      Adjust the slant angle of the parallelogram shape
+                    </p>
+                  </div>
+                )}
+                
                 <div className="mt-4 text-sm text-gray-500">
                   Output size: {outputSize.width}×{outputSize.height} pixels
                 </div>
               </div>
+
             </div>
-          </div>
 
-          <div className="cropContainer relative bg-gray-100 shadow-lg rounded-lg overflow-hidden" style={{height: '500px'}}>
-            <Cropper
-              image={imageSrc}
-              crop={crop}
-              zoom={zoom}
-              aspect={aspect}
-              onCropChange={setCrop}
-              onCropComplete={onCropComplete}
-              onZoomChange={setZoom}
-              cropShape={shape === 'circle' || shape === 'oval' || shape === 'portrait' || shape === 'portrait-id' ? 'round' : 'rect'}
-              showGrid={shape !== 'parallelogram'}
-            />
-            {/* {shape === 'parallelogram' && (
-              <div 
-                className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none border-2 border-white z-10"
-                style={{
-                  transform: 'skew(-15deg)',
-                  width: '80%',
-                  height: '80%',
-                  margin: 'auto',
-                  top: '10%',
-                  left: '10%',
-                  boxShadow: '0 0 0 9999px rgba(0, 0, 0, 0.5)'
-                }}
-              ></div>
-            )} */}
-          </div>
+            <div className="space-y-6">
+              <div className="cropContainer relative bg-gray-100 shadow-lg rounded-lg overflow-hidden" style={{height: '500px'}}>
+                <Cropper
+                  image={imageSrc}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={aspect}
+                  onCropChange={setCrop}
+                  onCropComplete={onCropComplete}
+                  onZoomChange={setZoom}
+                  cropShape={shape === 'circle' || shape === 'oval' || shape === 'portrait' || shape === 'portrait-id' ? 'round' : 'rect'}
+                  showGrid={shape !== 'parallelogram'}
+                />
+              </div>
 
-          <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-sm">
-            <ArrowsPointingOutIcon className="w-5 h-5 text-gray-500" />
-            <div className="flex-1">
-              <Slider
-                value={[zoom]}
-                min={1}
-                max={3}
-                step={0.1}
-                onValueChange={(value) => setZoom(value[0])}
-              />
-            </div>
-            <span className="text-sm font-medium text-gray-700">{zoom.toFixed(1)}x</span>
-          </div>
-
-          <div className="flex gap-2 mt-4">
-            <Button
-              onClick={showCroppedImage}
-              className="flex items-center gap-2"
-              disabled={!croppedAreaPixels}
-            >
-              <ArrowsPointingOutIcon className="w-5 h-5" />
-              Preview
-            </Button>
-            
-            <Button
-              onClick={downloadCroppedImage}
-              className="flex items-center gap-2"
-              disabled={!croppedAreaPixels}
-            >
-              <ArrowDownTrayIcon className="w-5 h-5" />
-              Download {shape === 'parallelogram' ? 'PNG' : 'JPG'}
-            </Button>
-
-            <Button
-              onClick={downloadCroppedImageWebP}
-              className="flex items-center gap-2"
-              disabled={!croppedAreaPixels}
-            >
-              <ArrowDownTrayIcon className="w-5 h-5" />
-              Download WebP
-            </Button>
-            
-            <Button
-              onClick={handleClearImage}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              Clear
-            </Button>
-          </div>
-
-          {croppedImage && (
-            <div className="mt-6 bg-white p-6 rounded-lg shadow-sm">
-              <h3 className="text-lg font-medium mb-4">
-                Cropped Result ({outputSize.width}×{outputSize.height})
-              </h3>
-              <div className="border rounded-lg p-4 bg-gray-50">
-                <div className="flex justify-center">
-                  <img
-                    src={croppedImage}
-                    alt="Cropped"
-                    className="max-h-[600px] w-auto object-contain border"
-                    style={{
-                      borderRadius: shape === 'circle' || shape === 'oval' || shape === 'portrait' ? '50%' : shape === 'portrait-id' ? '20%' : '0',
-                      maxWidth: '100%',
-                    }}
+              <div className="flex items-center gap-4 bg-white p-4 rounded-lg shadow-sm">
+                <ArrowsPointingOutIcon className="w-5 h-5 text-gray-500" />
+                <div className="flex-1">
+                  <Slider
+                    value={[zoom]}
+                    min={1}
+                    max={3}
+                    step={0.1}
+                    onValueChange={(value) => setZoom(value[0])}
                   />
                 </div>
-                <div className="mt-3 text-xs text-center text-gray-500">
-                  Output size: {outputSize.width}×{outputSize.height} pixels
-                </div>
+                <span className="text-sm font-medium text-gray-700">{zoom.toFixed(1)}x</span>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={downloadCroppedImage}
+                  className="flex items-center gap-2"
+                  disabled={!croppedAreaPixels}
+                >
+                  <ArrowDownTrayIcon className="w-5 h-5" />
+                  Download {shape === 'parallelogram' ? 'PNG' : 'JPG'}
+                </Button>
+
+                <Button
+                  onClick={downloadCroppedImageWebP}
+                  className="flex items-center gap-2"
+                  disabled={!croppedAreaPixels}
+                >
+                  <ArrowDownTrayIcon className="w-5 h-5" />
+                  Download WebP
+                </Button>
+                
+                <Button
+                  onClick={handleClearImage}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  Clear
+                </Button>
               </div>
             </div>
-          )}
+
+            {croppedImage && (
+                <div className="bg-white p-6 rounded-lg shadow-sm">
+                  <h3 className="text-lg font-medium mb-4">
+                    Live Preview ({outputSize.width}×{outputSize.height})
+                  </h3>
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <div className="flex justify-center">
+                      <img
+                        src={croppedImage}
+                        alt="Preview"
+                        className="max-h-[400px] w-auto object-contain border"
+                        style={{
+                          borderRadius: shape === 'circle' || shape === 'oval' || shape === 'portrait' ? '50%' : shape === 'portrait-id' ? '20%' : '0',
+                          maxWidth: '100%',
+                        }}
+                      />
+                    </div>
+                    <div className="mt-3 text-xs text-center text-gray-500">
+                      Output size: {outputSize.width}×{outputSize.height} pixels
+                    </div>
+                  </div>
+                </div>
+              )}
+          </div>
         </div>
       )}
     </div>
