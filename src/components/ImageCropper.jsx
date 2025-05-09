@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Square, RectangleVertical, Circle } from "lucide-react"; // Removed Shapes import
+import { Button } from "@/components/ui/button";
 
 const ImageCropper = () => {
   const [imageSrc, setImageSrc] = useState(null);
@@ -86,6 +87,22 @@ const ImageCropper = () => {
       const extension = shape === 'parallelogram' ? 'png' : 'jpg';
       link.download = `${originalFilename}.${extension}`;
       
+      document.body.appendChild(link);
+      link.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error(e);
+    }
+  }, [imageSrc, croppedAreaPixels, shape, selectedSize, originalFilename]);
+
+  const downloadCroppedImageWebP = useCallback(async () => {
+    try {
+      const blob = await getCroppedImg(imageSrc, croppedAreaPixels, shape, selectedSize, 'webp');
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${originalFilename}.webp`;
       document.body.appendChild(link);
       link.click();
       window.URL.revokeObjectURL(url);
@@ -330,33 +347,41 @@ const ImageCropper = () => {
             <span className="text-sm font-medium text-gray-700">{zoom.toFixed(1)}x</span>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button
+          <div className="flex gap-2 mt-4">
+            <Button
               onClick={showCroppedImage}
-              className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-md transition-colors flex-1"
+              className="flex items-center gap-2"
+              disabled={!croppedAreaPixels}
             >
-              Preview Crop
-            </button>
-            <button
+              <ArrowsPointingOutIcon className="w-5 h-5" />
+              Preview
+            </Button>
+            
+            <Button
               onClick={downloadCroppedImage}
-              className="bg-secondary hover:bg-secondary/90 text-gray-800 px-4 py-2 rounded-md transition-colors flex items-center justify-center gap-2"
+              className="flex items-center gap-2"
               disabled={!croppedAreaPixels}
             >
               <ArrowDownTrayIcon className="w-5 h-5" />
-              Download
-            </button>
-            <button
+              Download {shape === 'parallelogram' ? 'PNG' : 'JPG'}
+            </Button>
+
+            <Button
+              onClick={downloadCroppedImageWebP}
+              className="flex items-center gap-2"
+              disabled={!croppedAreaPixels}
+            >
+              <ArrowDownTrayIcon className="w-5 h-5" />
+              Download WebP
+            </Button>
+            
+            <Button
               onClick={handleClearImage}
-              className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md transition-colors"
+              variant="outline"
+              className="flex items-center gap-2"
             >
-              Clear Image
-            </button>
-            <button
-              onClick={handleReset}
-              className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md transition-colors"
-            >
-              Reset
-            </button>
+              Clear
+            </Button>
           </div>
 
           {croppedImage && (

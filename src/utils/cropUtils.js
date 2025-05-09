@@ -13,7 +13,7 @@ export const createImage = (url) =>
 /**
  * Get the cropped image as a Blob
  */
-export async function getCroppedImg(imageSrc, pixelCrop, shape = 'rectangle', customSize = null) {
+export async function getCroppedImg(imageSrc, pixelCrop, shape = 'rectangle', customSize = null, format = 'jpeg') {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -140,8 +140,16 @@ export async function getCroppedImg(imageSrc, pixelCrop, shape = 'rectangle', cu
 
   // As a Blob
   return new Promise((resolve) => {
-    // Use PNG format for parallelogram to support transparency
-    const imageFormat = shape === 'parallelogram' ? 'image/png' : 'image/jpeg';
+    // Determine image format
+    let imageFormat;
+    if (format === 'webp') {
+      imageFormat = 'image/webp';
+    } else if (shape === 'parallelogram' || format === 'png') {
+      imageFormat = 'image/png';
+    } else {
+      imageFormat = 'image/jpeg';
+    }
+    
     canvas.toBlob((blob) => {
       resolve(blob);
     }, imageFormat);
@@ -151,7 +159,7 @@ export async function getCroppedImg(imageSrc, pixelCrop, shape = 'rectangle', cu
 /**
  * Get the cropped image as a data URL
  */
-export async function getCroppedImgDataUrl(imageSrc, pixelCrop, shape = 'rectangle', customSize = null) {
+export async function getCroppedImgDataUrl(imageSrc, pixelCrop, shape = 'rectangle', customSize = null, format = 'jpeg') {
   const image = await createImage(imageSrc);
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
@@ -229,8 +237,6 @@ export async function getCroppedImgDataUrl(imageSrc, pixelCrop, shape = 'rectang
         scaledHeight
       );
       
-      // Use PNG format for parallelogram to support transparency
-      return canvas.toDataURL('image/png');
     } else if (shape === 'portrait') {
       // Draw portrait shape (oval with more focus on the head/shoulders)
       const radiusX = canvas.width / 2 * 0.95; // Slightly narrower than full width
@@ -278,8 +284,16 @@ export async function getCroppedImgDataUrl(imageSrc, pixelCrop, shape = 'rectang
     canvas.height
   );
 
-  // Use PNG format for parallelogram to support transparency
-  const imageFormat = shape === 'parallelogram' ? 'image/png' : 'image/jpeg';
+  // Determine image format
+  let imageFormat;
+  if (format === 'webp') {
+    imageFormat = 'image/webp';
+  } else if (shape === 'parallelogram' || format === 'png') {
+    imageFormat = 'image/png';
+  } else {
+    imageFormat = 'image/jpeg';
+  }
+
   return canvas.toDataURL(imageFormat);
 }
 
