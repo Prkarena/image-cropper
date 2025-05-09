@@ -14,17 +14,23 @@ const ImageCropper = () => {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [croppedImage, setCroppedImage] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [shape, setShape] = useState('rectangle');
-  const [selectedSize, setSelectedSize] = useState('medium'); // Default to medium
+  const [shape, setShape] = useState('parallelogram');
+  const [selectedSize, setSelectedSize] = useState('parallelogram-small'); // Default to medium
+  const [originalFilename, setOriginalFilename] = useState("image"); // Store original filename
   const fileInputRef = useRef(null);
 
   const onFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
       const reader = new FileReader();
-      reader.readAsDataURL(e.target.files[0]);
+      reader.readAsDataURL(file);
       reader.onload = () => {
         setImageSrc(reader.result);
         setCroppedImage(null);
+        
+        // Save the original filename without extension
+        const filename = file.name.replace(/\.[^/.]+$/, "");
+        setOriginalFilename(filename);
       };
     }
   };
@@ -48,6 +54,10 @@ const ImageCropper = () => {
       reader.onload = () => {
         setImageSrc(reader.result);
         setCroppedImage(null);
+        
+        // Save the original filename without extension
+        const filename = file.name.replace(/\.[^/.]+$/, "");
+        setOriginalFilename(filename);
       };
     }
   }, []);
@@ -71,7 +81,11 @@ const ImageCropper = () => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `cropped-image-${shape}.jpg`;
+      
+      // Use the original filename with appropriate extension based on shape
+      const extension = shape === 'parallelogram' ? 'png' : 'jpg';
+      link.download = `${originalFilename}.${extension}`;
+      
       document.body.appendChild(link);
       link.click();
       window.URL.revokeObjectURL(url);
@@ -79,13 +93,20 @@ const ImageCropper = () => {
     } catch (e) {
       console.error(e);
     }
-  }, [imageSrc, croppedAreaPixels, shape, selectedSize]);
+  }, [imageSrc, croppedAreaPixels, shape, selectedSize, originalFilename]);
 
   const handleReset = () => {
     setImageSrc(null);
     setCroppedImage(null);
     setCrop({ x: 0, y: 0 });
     setZoom(1);
+    setOriginalFilename("image");
+  };
+
+  const handleClearImage = () => {
+    setImageSrc(null);
+    setCroppedImage(null);
+    setOriginalFilename("image");
   };
 
   const handleShapeChange = (value) => {
@@ -109,12 +130,12 @@ const ImageCropper = () => {
   return (
     <div className="py-4">
       <h2 className="text-2xl font-bold text-gray-900 mb-4">
-        Precise Pixel Cutter
+        Image Cropper
       </h2>
       
       {!imageSrc ? (
         <div 
-          className={`h-96 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all rounded-lg overflow-hidden ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300'}`}
+          className={`p-2 h-96 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all rounded-lg overflow-hidden ${isDragging ? 'border-primary bg-primary/5' : 'border-gray-300'}`}
           onDragOver={onDragOver}
           onDragLeave={onDragLeave}
           onDrop={onDrop}
@@ -323,6 +344,12 @@ const ImageCropper = () => {
             >
               <ArrowDownTrayIcon className="w-5 h-5" />
               Download
+            </button>
+            <button
+              onClick={handleClearImage}
+              className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-md transition-colors"
+            >
+              Clear Image
             </button>
             <button
               onClick={handleReset}

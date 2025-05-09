@@ -27,9 +27,11 @@ export async function getCroppedImg(imageSrc, pixelCrop, shape = 'rectangle', cu
   canvas.width = outputSize.width;
   canvas.height = outputSize.height;
 
-  // Fill with white background (important for transparent PNGs)
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Fill with white background (important for transparent PNGs) - skip for parallelogram
+  if (shape !== 'parallelogram') {
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
   // For circle or oval shape, create an appropriate clipping path
   if (shape === 'circle' || shape === 'oval' || shape === 'portrait' || shape === 'portrait-id' || shape === 'parallelogram') {
@@ -138,9 +140,11 @@ export async function getCroppedImg(imageSrc, pixelCrop, shape = 'rectangle', cu
 
   // As a Blob
   return new Promise((resolve) => {
+    // Use PNG format for parallelogram to support transparency
+    const imageFormat = shape === 'parallelogram' ? 'image/png' : 'image/jpeg';
     canvas.toBlob((blob) => {
       resolve(blob);
-    }, 'image/jpeg');
+    }, imageFormat);
   });
 }
 
@@ -161,9 +165,11 @@ export async function getCroppedImgDataUrl(imageSrc, pixelCrop, shape = 'rectang
   canvas.width = outputSize.width;
   canvas.height = outputSize.height;
 
-  // Fill with white background (important for transparent PNGs)
-  ctx.fillStyle = '#FFFFFF';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Fill with white background (important for transparent PNGs) - skip for parallelogram
+  if (shape !== 'parallelogram') {
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
   // For circle or oval shape, create an appropriate clipping path
   if (shape === 'circle' || shape === 'oval' || shape === 'portrait' || shape === 'portrait-id' || shape === 'parallelogram') {
@@ -183,47 +189,48 @@ export async function getCroppedImgDataUrl(imageSrc, pixelCrop, shape = 'rectang
         0, 0, Math.PI * 2
       );
     } else if (shape === 'parallelogram') {
-           // Create a new approach for parallelogram that doesn't use transformations
-           const width = canvas.width;
-           const height = canvas.height;
-           const skewAmount = width * 0.15;
-           
-           // Create clipping path
-           ctx.beginPath();
-           ctx.moveTo(skewAmount, 0);
-           ctx.lineTo(width, 0);
-           ctx.lineTo(width - skewAmount, height);
-           ctx.lineTo(0, height);
-           ctx.closePath();
-           ctx.clip();
-           
-           // Calculate the scale factors to maintain the image proportions inside the parallelogram
-           const scaleX = (width - skewAmount) / pixelCrop.width;
-           const scaleY = height / pixelCrop.height;
-           const scale = Math.max(scaleX, scaleY);
-           
-           // Calculate dimensions of the scaled image
-           const scaledWidth = pixelCrop.width * scale;
-           const scaledHeight = pixelCrop.height * scale;
-           
-           // Calculate position to center the image in the parallelogram
-           const offsetX = (width - scaledWidth) / 2;
-           const offsetY = (height - scaledHeight) / 2;
-           
-           // Draw the image considering the parallelogram shape without rotation
-           ctx.drawImage(
-             image,
-             pixelCrop.x,
-             pixelCrop.y,
-             pixelCrop.width,
-             pixelCrop.height,
-             offsetX,
-             offsetY,
-             scaledWidth,
-             scaledHeight
-           );
+      // Create a new approach for parallelogram that doesn't use transformations
+      const width = canvas.width;
+      const height = canvas.height;
+      const skewAmount = width * 0.15;
       
-      return canvas.toDataURL('image/jpeg');
+      // Create clipping path
+      ctx.beginPath();
+      ctx.moveTo(skewAmount, 0);
+      ctx.lineTo(width, 0);
+      ctx.lineTo(width - skewAmount, height);
+      ctx.lineTo(0, height);
+      ctx.closePath();
+      ctx.clip();
+      
+      // Calculate the scale factors to maintain the image proportions inside the parallelogram
+      const scaleX = (width - skewAmount) / pixelCrop.width;
+      const scaleY = height / pixelCrop.height;
+      const scale = Math.max(scaleX, scaleY);
+      
+      // Calculate dimensions of the scaled image
+      const scaledWidth = pixelCrop.width * scale;
+      const scaledHeight = pixelCrop.height * scale;
+      
+      // Calculate position to center the image in the parallelogram
+      const offsetX = (width - scaledWidth) / 2;
+      const offsetY = (height - scaledHeight) / 2;
+      
+      // Draw the image considering the parallelogram shape without rotation
+      ctx.drawImage(
+        image,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        offsetX,
+        offsetY,
+        scaledWidth,
+        scaledHeight
+      );
+      
+      // Use PNG format for parallelogram to support transparency
+      return canvas.toDataURL('image/png');
     } else if (shape === 'portrait') {
       // Draw portrait shape (oval with more focus on the head/shoulders)
       const radiusX = canvas.width / 2 * 0.95; // Slightly narrower than full width
@@ -271,7 +278,9 @@ export async function getCroppedImgDataUrl(imageSrc, pixelCrop, shape = 'rectang
     canvas.height
   );
 
-  return canvas.toDataURL('image/jpeg');
+  // Use PNG format for parallelogram to support transparency
+  const imageFormat = shape === 'parallelogram' ? 'image/png' : 'image/jpeg';
+  return canvas.toDataURL(imageFormat);
 }
 
 /**
@@ -292,9 +301,9 @@ export function getOutputSize(customSize = null, shape = 'rectangle') {
     'oval-small': { width: 300, height: 450 },
     'oval-medium': { width: 350, height: 525 },
     'oval-large': { width: 400, height: 600 },
-    'parallelogram-small': { width: 400, height: 300 },
-    'parallelogram-medium': { width: 500, height: 350 }, 
-    'parallelogram-large': { width: 600, height: 400 },
+    'parallelogram-small': { width: 375, height: 600 },
+    'parallelogram-medium': { width: 665, height: 931 }, 
+    'parallelogram-large': { width: 700, height: 931 },
     'portrait-small': { width: 320, height: 480 },
     'portrait-medium': { width: 375, height: 650 },
     'portrait-large': { width: 420, height: 720 },

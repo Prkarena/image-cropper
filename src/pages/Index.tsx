@@ -9,14 +9,14 @@ const Index = () => {
           <h1 className="text-4xl font-bold text-gray-800 mb-3">Image Crop Tool</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Upload any image and crop it to match mobile app layouts, social media posts, or print materials.
-            Choose from rectangle, square, circle, oval, or portrait formats with customizable sizes.
+            Choose from rectangle, square, circle or Parallelogram formats with customizable sizes.
           </p>
         </header>
         <main>
           <ImageCropper />
         </main>
         <footer className="mt-16 text-center text-sm text-gray-500">
-          <p>© 2025 Precise Pixel Cutter • All rights reserved</p>
+          <p>© 2025 Prakash Karena • All rights reserved</p>
         </footer>
       </div>
     </div>
